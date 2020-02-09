@@ -243,6 +243,7 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 %type <ast> exit_expr scalar backticks_expr lexical_var function_call member_name property_name
 %type <ast> variable_class_name dereferencable_scalar constant dereferencable
 %type <ast> callable_expr callable_variable static_member new_variable
+%type <ast> callback callback_expr
 %type <ast> encaps_var encaps_var_offset isset_variables
 %type <ast> top_statement_list use_declarations const_list inner_statement_list if_stmt
 %type <ast> alt_if_stmt for_exprs switch_case_list global_var_list static_var_list
@@ -884,6 +885,8 @@ new_expr:
 expr:
 		variable
 			{ $$ = $1; }
+	|	callback
+			{ $$ = $1; }
 	|	T_LIST '(' array_pair_list ')' '=' expr
 			{ $3->attr = ZEND_ARRAY_SYNTAX_LIST; $$ = zend_ast_create(ZEND_AST_ASSIGN, $3, $6); }
 	|	'[' array_pair_list ']' '=' expr
@@ -1122,6 +1125,42 @@ scalar:
 	|	T_START_HEREDOC encaps_list T_END_HEREDOC { $$ = $2; }
 	|	dereferencable_scalar	{ $$ = $1; }
 	|	constant			{ $$ = $1; }
+;
+
+callback:
+		T_FN T_PAAMAYIM_NEKUDOTAYIM callback_expr    { $$ = $3; }
+;
+
+callback_expr:
+		T_VARIABLE T_OBJECT_OPERATOR T_STRING {
+			$$ = zend_ast_list_add(
+				zend_ast_create_list(
+					1, ZEND_AST_ARRAY,
+					zend_ast_create(
+						ZEND_AST_ARRAY_ELEM,
+						zend_ast_create(ZEND_AST_VAR, $1),
+						NULL
+					)
+				),
+				zend_ast_create(ZEND_AST_ARRAY_ELEM, $3, NULL)
+			);
+		}
+	|	class_name T_PAAMAYIM_NEKUDOTAYIM T_STRING {
+			$$ = zend_ast_list_add(
+				zend_ast_create_list(
+					1, ZEND_AST_ARRAY,
+					zend_ast_create(
+						ZEND_AST_ARRAY_ELEM,
+						zend_ast_create(ZEND_AST_CLASS_NAME, $1),
+						NULL
+					)
+				),
+				zend_ast_create(ZEND_AST_ARRAY_ELEM, $3, NULL)
+			);
+		}
+	|	name {
+			$$ = $1;
+		}
 ;
 
 constant:

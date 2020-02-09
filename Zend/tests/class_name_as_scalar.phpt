@@ -2,6 +2,7 @@
 class name as scalar from ::class keyword
 --FILE--
 <?php
+// Keep in sync with fn_callbacks/class_name_resolution.phpt
 
 namespace Foo\Bar {
     class One {
